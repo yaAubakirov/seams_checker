@@ -28,7 +28,10 @@ class Analyze:
         ndt_classes = [' A', ' B', ' C', ' D', 'A', 'B', 'C', 'D', ' A', ' B', ' C', ' D']
         for ndt in ndt_classes:
             for page in text:
-                res_search = re.search(to_find + ndt, text[page])
+                try:
+                    res_search = re.search(to_find + ndt, text[page])
+                except:
+                    return False
                 if res_search:
                     return True
 
@@ -52,6 +55,10 @@ class App:
 
         self.txt = st.ScrolledText(master, width=40)
         self.txt.grid(rowspan=5, column=0, row=0, pady=4, padx=4)
+        self.txt.tag_config('warning', foreground="red")
+
+        self.copyright = tk.Label(master, text='Metal Yapı Engineering & Construction LLC', fg="#808080")
+        self.copyright.place(relx=.6, rely=.95)
 
     def pdf_load(self):
         file = dg.askopenfile(mode='rb', title='Choose a file', filetypes=[("PDF files", ".pdf")])
@@ -65,21 +72,27 @@ class App:
         self.txt.insert('end', "{} is loaded\n".format(filename))
 
     def excel_load(self):
-        file = dg.askopenfile(mode='rb', title='Choose a file', filetypes=[("Excel files", ".xlsx .xls")])
+        file = dg.askopenfile(mode='rb', title='Choose a file', filetypes=[("Excel files", ".xlsx")])
         if file:
             filepath = os.path.abspath(file.name)
             wb = openpyxl.load_workbook(filepath)
             ws = wb.active
             max_rows = ws.max_row
             temp_list = []
-            for row in ws.iter_rows(min_row=1, max_col=1, max_row=max_rows):
+            for row in ws.iter_rows(min_row=2, min_col=12, max_col=12, max_row=max_rows):
                 for cell in row:
-                    temp_list.append(cell.value)
+                    if cell.value is not None:
+                        if str(cell.value)[0] != ' ':
+                            temp_list.append(cell.value)
+                        else:
+                            self.txt.insert('end', "Spaces should be deleted from WSL report\n")
+                            return False
 
             Storage.weld_list = temp_list
         self.txt.insert('end', "Excel is loaded\n")
 
     def analyze(self):
+        wrong_welds = []
         self.txt.insert('end', "...........\n")
         text = ""
         if Storage.text is None:
@@ -93,9 +106,18 @@ class App:
                     self.refresh()
                     self.txt.insert('end', "{} is OK\n".format(str(weld)))
                 else:
-                    self.txt.insert('end', "Problem with {}\n".format(str(weld)))
+                    self.txt.insert('end', "Problem with {}\n".format(str(weld)), 'warning')
+                    wrong_welds.append(weld)
         else:
             self.txt.insert('end', "Excel is not loaded\n")
+
+        self.txt.insert('end', "\n...........\n")
+        self.txt.insert('end', "Total count of welds is {}\n".format(len(Storage.weld_list)))
+        self.txt.insert('end', "Total count of not found welds is {}\n".format(len(wrong_welds)))
+
+        if len(wrong_welds) == 0:
+            self.txt.insert('end', "...........\n")
+            self.txt.insert('end', "Erection drawing is OK\n")
 
     def loading(self):
         self.txt.insert('end', 'Pdf document processing |')
