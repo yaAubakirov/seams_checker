@@ -34,7 +34,11 @@ class Analyze:
     @classmethod
     def find_in_text(cls, to_find, index, text):
         # list with two types of concat
-        ndt_classes = [' ' + str(Storage.ndt_list[index]), str(Storage.ndt_list[index])]
+        ndt_classes = [
+            ' ' + str(Storage.ndt_list[index]),
+            str(Storage.ndt_list[index]),
+            ' ' + str(Storage.ndt_list[index])
+        ]
         for ndt in ndt_classes:
             for page in text:
                 try:
@@ -96,6 +100,7 @@ class App:
             self.loading()
         self.txt.insert('end', "{} is loaded\n".format(filename))
         Storage.filename = filename
+        print(filename)
 
     def excel_load(self):
         file = dg.askopenfile(mode='rb', title='Choose WSL report', filetypes=[("Excel files", ".xlsx")])
