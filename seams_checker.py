@@ -91,15 +91,19 @@ class App:
 
     def pdf_load(self):
         file = dg.askopenfile(mode='rb', title='Choose a file', filetypes=[("PDF files", ".pdf")])
-        filepath = os.path.abspath(file.name)
-        filename = os.path.splitext(os.path.basename(filepath))[0]
-        pdf_load = threading.Thread(target=Analyze.extract_text_from_pdf2, args=[filepath])
-        pdf_load.daemon = True
-        pdf_load.start()
-        while pdf_load.is_alive():
-            self.loading()
-        self.txt.insert('end', "{} is loaded\n".format(filename))
-        Storage.filename = filename
+        if file is not None:
+            filepath = os.path.abspath(file.name)
+            filename = os.path.splitext(os.path.basename(filepath))[0]
+            pdf_load = threading.Thread(target=Analyze.extract_text_from_pdf2, args=[filepath])
+            pdf_load.daemon = True
+            pdf_load.start()
+            while pdf_load.is_alive():
+                self.loading()
+            self.txt.insert('end', "{} is loaded\n".format(filename))
+            Storage.filename = filename
+        else:
+            self.txt.insert('end', "PDF is not uploaded\n")
+            return False
 
     def excel_load(self):
         try:
