@@ -107,7 +107,7 @@ class App:
         except PermissionError:
             self.txt.insert('end', "Close WSL first\n")
             return False
-        if file:
+        if file is not None:
             filepath = os.path.abspath(file.name)
             wb = openpyxl.load_workbook(filepath)
             ws = wb.active
@@ -155,7 +155,10 @@ class App:
             Storage.weld_list = temp_welds_list
             Storage.ndt_list = temp_ndt_list
             Storage.temp_drawing_number_list = temp_drawing_number_list
-        self.txt.insert('end', "WSL is loaded\n")
+        else:
+            self.txt.insert('end', "WSL is not uploaded\n")
+            return False
+        self.txt.insert('end', "WSL is uploaded\n")
 
     def analyze(self):
         wrong_welds = []
