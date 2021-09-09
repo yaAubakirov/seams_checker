@@ -3,13 +3,14 @@ import tkinter.filedialog as dg
 import tkinter.scrolledtext as st
 import os
 import re
+import random
 import base64
 import threading
 import openpyxl
 import fitz
 
 
-# this class is used as storage for variables to pass them them between classes
+# this class is used as storage for variables to pass them between classes
 class Storage:
     text = None
     weld_list = None
@@ -99,7 +100,7 @@ class App:
             pdf_load.start()
             while pdf_load.is_alive():
                 self.loading()
-            self.txt.insert('end', "{} is loaded\n".format(filename))
+            self.txt.insert('end', "Drawing is loaded\n".format(filename))
             Storage.filename = filename
         else:
             self.txt.insert('end', "PDF is not uploaded\n")
@@ -179,15 +180,18 @@ class App:
                     if Storage.temp_drawing_number_list[index] == Storage.filename[:37]:
                         self.refresh()
                         self.txt.insert('end', "{} is OK\n".format(str(weld)))
+                        self.txt.yview('end')
                     else:
                         self.refresh()
                         self.txt.insert('end',
                                         "Erection drawing number for {} in WSL is not correct\n".format(str(weld)),
                                         'warning')
                         wrong_welds.append(weld)
+                        self.txt.yview('end')
                 else:
                     self.txt.insert('end', "Problem with {}\n".format(str(weld)), 'warning')
                     wrong_welds.append(weld)
+                    self.txt.yview('end')
         else:
             self.txt.insert('end', "WSL is not loaded\n")
 
@@ -198,20 +202,31 @@ class App:
         if len(wrong_welds) == 0:
             self.txt.insert('end', ".............\n\n")
             self.txt.insert('end', "{} is OK\n".format(Storage.filename))
+            self.txt.yview('end')
         if len(Storage.weld_list) == len(wrong_welds):
             self.txt.insert('end', "Probably spaces are not deleted from WSL\n")
+            self.txt.yview('end')
+        self.txt.yview('end')
 
     def loading(self):
-        self.txt.insert('end', 'Pdf document processing |')
-        self.refresh()
-        self.clear_all_text()
-        self.txt.insert('end', 'Pdf document processing /')
-        self.refresh()
-        self.clear_all_text()
-        self.txt.insert('end', 'Pdf document processing —')
-        self.refresh()
-        self.clear_all_text()
-        self.txt.insert('end', 'Pdf document processing \\')
+        # self.txt.insert('end', 'Pdf document processing |')
+        # self.refresh()
+        # self.clear_all_text()
+        # self.txt.insert('end', 'Pdf document processing /')
+        # self.refresh()
+        # self.clear_all_text()
+        # self.txt.insert('end', 'Pdf document processing —')
+        # self.refresh()
+        # self.clear_all_text()
+        # self.txt.insert('end', 'Pdf document processing \\')
+        # self.refresh()
+        # self.clear_all_text()
+
+        hashtags = random.randint(5, 35)
+        spaces = 40 - hashtags - 4
+        percentage = int(hashtags * 2.5)
+        self.txt.insert('end', 'Pdf pages loading. Please wait...\n')
+        self.txt.insert('end', '#' * hashtags + ' ' * spaces + '{}%'.format(percentage))
         self.refresh()
         self.clear_all_text()
 
