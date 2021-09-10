@@ -202,7 +202,7 @@ class App:
 
         if len(wrong_welds) == 0:
             self.txt.insert('end', ".............\n\n")
-            self.txt.insert('end', "{} ✔\n".format(Storage.filename), 'name')
+            self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'name')
             self.txt.tag_config('name', foreground='green')
             self.txt.yview('end')
         if len(Storage.weld_list) == len(wrong_welds):
@@ -210,7 +210,7 @@ class App:
             self.txt.yview('end')
         if len(wrong_welds) > 0:
             self.txt.insert('end', ".............\n\n")
-            self.txt.insert('end', "{} ✘\n".format(Storage.filename), 'warning')
+            self.txt.insert('end', "{} ✘\n".format(Storage.filename[:37]), 'warning')
             self.txt.yview('end')
         self.txt.yview('end')
 
