@@ -198,7 +198,7 @@ class App:
 
         self.txt.insert('end', ".............\n")
         self.txt.insert('end', "\nTotal count of welds is {}\n".format(len(Storage.weld_list)))
-        self.txt.insert('end', "Total count of not found welds is {}\n\n".format(len(wrong_welds)))
+        self.txt.insert('end', "Total count of problem welds is {}\n\n".format(len(wrong_welds)))
 
         if len(wrong_welds) == 0:
             self.txt.insert('end', ".............\n\n")
@@ -215,19 +215,6 @@ class App:
         self.txt.yview('end')
 
     def loading(self):
-        # self.txt.insert('end', 'Pdf document processing |')
-        # self.refresh()
-        # self.clear_all_text()
-        # self.txt.insert('end', 'Pdf document processing /')
-        # self.refresh()
-        # self.clear_all_text()
-        # self.txt.insert('end', 'Pdf document processing —')
-        # self.refresh()
-        # self.clear_all_text()
-        # self.txt.insert('end', 'Pdf document processing \\')
-        # self.refresh()
-        # self.clear_all_text()
-
         hashtags = random.randint(5, 35)
         spaces = 40 - hashtags - 4
         percentage = int(hashtags * 2.5)
