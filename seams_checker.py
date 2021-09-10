@@ -63,10 +63,11 @@ class App:
         # Extract the icon
         icon_file.write(icon_data)
         icon_file.close()
+        version = 1.0
 
         # application interface
         self.master = master
-        master.title('Welds checker')
+        master.title('Welds checker (v{})'.format(version))
         master.geometry("600x400")
         master.resizable(0, 0)
         master.columnconfigure(2, weight=2)
