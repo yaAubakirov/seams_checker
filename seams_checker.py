@@ -27,7 +27,7 @@ class Analyze:
         with fitz.open(pdf_path) as doc:
             text = {}
             for num, page in enumerate(doc):
-                text[num] = page.getText()
+                text[num] = page.get_text()
 
             Storage.text = text
 
@@ -123,12 +123,14 @@ class App:
             temp_drawing_number_list = []
             for row in ws.iter_rows(min_row=2, min_col=12, max_col=12, max_row=max_rows):
                 for cell in row:
-                    if cell.value is not None:
+                    if cell.value:
                         if str(cell.value)[0] != ' ':
                             temp_welds_list.append(cell.value)
                         else:
                             self.txt.insert('end', "Spaces should be deleted from WSL report\n")
                             return False
+                    else:
+                        temp_welds_list.append('Weld Number is missed')
 
             for row in ws.iter_rows(min_row=2, min_col=20, max_col=20, max_row=max_rows):
                 for cell in row:
