@@ -130,16 +130,18 @@ class App:
                             self.txt.insert('end', "Spaces should be deleted from WSL report\n")
                             return False
                     else:
-                        temp_welds_list.append('Weld Number is missed')
+                        temp_welds_list.append('missed weld number')
 
             for row in ws.iter_rows(min_row=2, min_col=20, max_col=20, max_row=max_rows):
                 for cell in row:
-                    if cell.value is not None:
+                    if cell.value:
                         if str(cell.value)[0] != ' ':
                             temp_ndt_list.append(cell.value)
                         else:
                             self.txt.insert('end', "Spaces should be deleted from WSL report\n")
                             return False
+                    else:
+                        temp_ndt_list.append('NDT class is missed')
 
             for row in ws.iter_rows(min_row=2, min_col=4, max_col=4, max_row=max_rows):
                 for cell in row:
@@ -149,6 +151,9 @@ class App:
                         else:
                             self.txt.insert('end', "Spaces should be deleted from WSL report\n")
                             return False
+                    else:
+                        temp_drawing_number_list.append('Drawing number is missed')
+
             # checking for cases when drawing numbers are not filled in the end
             if len(temp_welds_list) > len(temp_drawing_number_list):
                 a = len(temp_welds_list) - len(temp_drawing_number_list)
