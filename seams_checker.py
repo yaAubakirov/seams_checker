@@ -63,7 +63,7 @@ class App:
         # Extract the icon
         icon_file.write(icon_data)
         icon_file.close()
-        version = 1.0
+        version = 1.01
 
         # application interface
         self.master = master
