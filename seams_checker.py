@@ -63,7 +63,7 @@ class App:
         # Extract the icon
         icon_file.write(icon_data)
         icon_file.close()
-        version = 1.01
+        version = 1.02
 
         # application interface
         self.master = master
@@ -87,6 +87,7 @@ class App:
         self.txt = st.ScrolledText(master, width=40)
         self.txt.grid(rowspan=5, column=0, row=0, pady=4, padx=4)
         self.txt.tag_config('warning', foreground="red")
+        self.txt.configure(state='disabled')
 
         self.copyright = tk.Label(master, text='Metal Yapı Engineering & Construction LLC', fg="#808080")
         self.copyright.place(relx=.6, rely=.95)
@@ -101,17 +102,17 @@ class App:
             pdf_load.start()
             while pdf_load.is_alive():
                 self.loading()
-            self.txt.insert('end', "Drawing is loaded\n".format(filename))
+            self.insert_text('Drawing is loaded')
             Storage.filename = filename
         else:
-            self.txt.insert('end', "PDF is not uploaded\n")
+            self.insert_text('PDF is not uploaded')
             return False
 
     def excel_load(self):
         try:
             file = dg.askopenfile(mode='rb', title='Choose WSL report', filetypes=[("Excel files", ".xlsx")])
         except PermissionError:
-            self.txt.insert('end', "Close WSL first\n")
+            self.insert_text('Close WSL first')
             return False
         if file is not None:
             filepath = os.path.abspath(file.name)
@@ -127,7 +128,7 @@ class App:
                         if str(cell.value)[0] != ' ':
                             temp_welds_list.append(cell.value)
                         else:
-                            self.txt.insert('end', "Spaces should be deleted from WSL report\n")
+                            self.insert_text('Spaces should be deleted from WSL report')
                             return False
                     else:
                         temp_welds_list.append('missed weld number')
@@ -138,7 +139,7 @@ class App:
                         if str(cell.value)[0] != ' ':
                             temp_ndt_list.append(cell.value)
                         else:
-                            self.txt.insert('end', "Spaces should be deleted from WSL report\n")
+                            self.insert_text('Spaces should be deleted from WSL report')
                             return False
                     else:
                         temp_ndt_list.append('NDT class is missed')
@@ -149,7 +150,7 @@ class App:
                         if str(cell.value)[0] != ' ':
                             temp_drawing_number_list.append(cell.value)
                         else:
-                            self.txt.insert('end', "Spaces should be deleted from WSL report\n")
+                            self.insert_text('Spaces should be deleted from WSL report')
                             return False
                     else:
                         temp_drawing_number_list.append('Drawing number is missed')
@@ -169,16 +170,16 @@ class App:
             Storage.ndt_list = temp_ndt_list
             Storage.temp_drawing_number_list = temp_drawing_number_list
         else:
-            self.txt.insert('end', "WSL is not uploaded\n")
+            self.insert_text('WSL is not uploaded')
             return False
-        self.txt.insert('end', "WSL is uploaded\n")
+        self.insert_text('WSL is uploaded')
 
     def analyze(self):
         wrong_welds = []
-        self.txt.insert('end', ".............\n")
+        self.insert_text('.............')
         text = ""
         if Storage.text is None:
-            self.txt.insert('end', "PDF is not loaded\n")
+            self.insert_text('PDF is not loaded')
         else:
             text = Storage.text
 
@@ -186,9 +187,7 @@ class App:
             for index, weld in enumerate(Storage.weld_list):
                 if Analyze.find_in_text(str(weld), index, text):
                     if Storage.temp_drawing_number_list[index] == Storage.filename[:37]:
-                        self.refresh()
-                        self.txt.insert('end', "{} is OK\n".format(str(weld)))
-                        self.txt.yview('end')
+                        self.weld_text_insert(weld)
                     else:
                         self.refresh()
                         self.txt.insert('end',
@@ -197,38 +196,64 @@ class App:
                         wrong_welds.append(weld)
                         self.txt.yview('end')
                 else:
-                    self.txt.insert('end', "Problem with {}\n".format(str(weld)), 'warning')
+                    self.problem_weld_text_insert(weld)
                     wrong_welds.append(weld)
-                    self.txt.yview('end')
         else:
-            self.txt.insert('end', "WSL is not loaded\n")
+            self.insert_text('WSL is not loaded')
 
-        self.txt.insert('end', ".............\n")
-        self.txt.insert('end', "\nTotal count of welds is {}\n".format(len(Storage.weld_list)))
-        self.txt.insert('end', "Total count of problem welds is {}\n\n".format(len(wrong_welds)))
+        self.insert_text('.............')
+        final_result = "\nTotal count of welds is {}".format(len(Storage.weld_list))
+        self.insert_text(final_result)
+        final_result_for_wrong_welds = "Total count of problem welds is {}".format(len(wrong_welds))
+        self.insert_text(final_result_for_wrong_welds, 2)
 
         if len(wrong_welds) == 0:
-            self.txt.insert('end', ".............\n\n")
+            self.insert_text('.............', 2)
+            self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'name')
             self.txt.tag_config('name', foreground='green')
             self.txt.yview('end')
+            self.txt.configure(state='disabled')
         if len(Storage.weld_list) == len(wrong_welds):
-            self.txt.insert('end', "Probably spaces are not deleted from WSL\n")
-            self.txt.yview('end')
+            self.insert_text('Probably spaces are not deleted from WSL')
         if len(wrong_welds) > 0:
-            self.txt.insert('end', ".............\n\n")
+            self.insert_text('.............', 2)
+            self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✘\n".format(Storage.filename[:37]), 'warning')
             self.txt.yview('end')
+            self.txt.configure(state='disabled')
         self.txt.yview('end')
 
     def loading(self):
         hashtags = random.randint(5, 35)
         spaces = 40 - hashtags - 4
         percentage = int(hashtags * 2.5)
+        self.txt.configure(state='normal')
         self.txt.insert('end', 'Pdf pages loading. Please wait...\n')
         self.txt.insert('end', '#' * hashtags + ' ' * spaces + '{}%'.format(percentage))
         self.refresh()
         self.clear_all_text()
+        self.txt.configure(state='disabled')
+
+    def insert_text(self, text, number_of_n=1):
+        self.txt.configure(state='normal')
+        self.txt.insert('end', "{}{}".format(text, '\n' * number_of_n))
+        self.txt.yview('end')
+        self.txt.configure(state='disabled')
+
+    def weld_text_insert(self, weld_number):
+        self.txt.configure(state='normal')
+        self.refresh()
+        self.txt.insert('end', "{} is OK\n".format(str(weld_number)))
+        self.txt.yview('end')
+        self.txt.configure(state='disabled')
+
+    def problem_weld_text_insert(self, weld_number):
+        self.txt.configure(state='normal')
+        self.refresh()
+        self.txt.insert('end', "Problem with {}\n".format(str(weld_number)), 'warning')
+        self.txt.yview('end')
+        self.txt.configure(state='disabled')
 
     def refresh(self):
         self.master.update()
