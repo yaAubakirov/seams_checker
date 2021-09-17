@@ -102,7 +102,7 @@ class App:
             pdf_load.start()
             while pdf_load.is_alive():
                 self.loading()
-            self.insert_text('Drawing is loaded')
+            self.insert_text('Drawing is uploaded')
             Storage.filename = filename
         else:
             self.insert_text('PDF is not uploaded')
