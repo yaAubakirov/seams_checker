@@ -15,6 +15,8 @@ class Storage:
     text = None
     weld_list = None
     ndt_list = None
+    first_mark_list = None
+    second_mark_list = None
     temp_drawing_number_list = None
     filename = None
 
@@ -50,6 +52,28 @@ class Analyze:
                 if res_search:
                     return True
 
+    @classmethod
+    def weld_without_ndt(cls, weld, text):
+        for page in text:
+            try:
+                res_search = re.search(weld, text[page])
+            except:
+                return False
+
+            if res_search:
+                return True
+
+    @classmethod
+    def is_weld_is_plating_grating(cls, weld, index, text):
+        if Analyze.weld_without_ndt(weld, text):
+            if Storage.first_mark_list[index][:3] == "FLP" \
+                    or Storage.second_mark_list[index][:3] == "FLP" \
+                    or Storage.first_mark_list[index][:2] == "GR" \
+                    or Storage.second_mark_list[index][:2] == "GR":
+                return True
+        else:
+            return False
+
 
 # main class which one runs application interface
 class App:
@@ -63,7 +87,7 @@ class App:
         # Extract the icon
         icon_file.write(icon_data)
         icon_file.close()
-        version = 1.02
+        version = 1.10
 
         # application interface
         self.master = master
@@ -122,6 +146,8 @@ class App:
             temp_welds_list = []
             temp_ndt_list = []
             temp_drawing_number_list = []
+            first_mark_list = []
+            second_mark_list = []
             for row in ws.iter_rows(min_row=2, min_col=12, max_col=12, max_row=max_rows):
                 for cell in row:
                     if cell.value:
@@ -155,6 +181,28 @@ class App:
                     else:
                         temp_drawing_number_list.append('Drawing number is missed')
 
+            for row in ws.iter_rows(min_row=2, min_col=6, max_col=6, max_row=max_rows):
+                for cell in row:
+                    if cell.value is not None:
+                        if str(cell.value)[0] != ' ':
+                            first_mark_list.append(cell.value)
+                        else:
+                            self.insert_text('Spaces should be deleted from WSL report')
+                            return False
+                    else:
+                        temp_drawing_number_list.append('Drawing number is missed')
+
+            for row in ws.iter_rows(min_row=2, min_col=9, max_col=9, max_row=max_rows):
+                for cell in row:
+                    if cell.value is not None:
+                        if str(cell.value)[0] != ' ':
+                            second_mark_list.append(cell.value)
+                        else:
+                            self.insert_text('Spaces should be deleted from WSL report')
+                            return False
+                    else:
+                        temp_drawing_number_list.append('Drawing number is missed')
+
             # checking for cases when drawing numbers are not filled in the end
             if len(temp_welds_list) > len(temp_drawing_number_list):
                 a = len(temp_welds_list) - len(temp_drawing_number_list)
@@ -169,6 +217,8 @@ class App:
             Storage.weld_list = temp_welds_list
             Storage.ndt_list = temp_ndt_list
             Storage.temp_drawing_number_list = temp_drawing_number_list
+            Storage.first_mark_list = first_mark_list
+            Storage.second_mark_list = second_mark_list
         else:
             self.insert_text('WSL is not uploaded')
             return False
@@ -176,6 +226,7 @@ class App:
 
     def analyze(self):
         wrong_welds = []
+        typical_welds = []
         self.insert_text('.............')
         text = ""
         if Storage.text is None:
@@ -195,6 +246,9 @@ class App:
                                         'warning')
                         wrong_welds.append(weld)
                         self.txt.yview('end')
+                elif Analyze.is_weld_is_plating_grating(str(weld), index, text):
+                    self.typical_weld_text_insert(weld)
+                    typical_welds.append(weld)
                 else:
                     self.problem_weld_text_insert(weld)
                     wrong_welds.append(weld)
@@ -204,6 +258,9 @@ class App:
         self.insert_text('.............')
         final_result = "\nTotal count of welds is {}".format(len(Storage.weld_list))
         self.insert_text(final_result)
+        if len(typical_welds) > 0:
+            final_result_for_typical_welds = "Total count of typical welds is {}".format(len(typical_welds))
+            self.insert_text(final_result_for_typical_welds)
         final_result_for_wrong_welds = "Total count of problem welds is {}".format(len(wrong_welds))
         self.insert_text(final_result_for_wrong_welds, 2)
 
@@ -252,6 +309,14 @@ class App:
         self.txt.configure(state='normal')
         self.refresh()
         self.txt.insert('end', "Problem with {}\n".format(str(weld_number)), 'warning')
+        self.txt.yview('end')
+        self.txt.configure(state='disabled')
+
+    def typical_weld_text_insert(self, weld_number):
+        self.txt.configure(state='normal')
+        self.refresh()
+        self.txt.insert('end', "{} is typical\n".format(str(weld_number)), 'attention')
+        self.txt.tag_config('attention', foreground='#FFC000')
         self.txt.yview('end')
         self.txt.configure(state='disabled')
 
