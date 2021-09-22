@@ -106,7 +106,6 @@ class App:
 
         self.txt = st.ScrolledText(master, width=40)
         self.txt.grid(rowspan=5, column=0, row=0, pady=4, padx=4)
-        self.txt.tag_config('warning', foreground="red")
         self.txt.configure(state='disabled')
 
         self.copyright = tk.Label(master, text='Metal Yapı Engineering & Construction LLC', fg="#808080")
@@ -273,6 +272,7 @@ class App:
             self.insert_text('.............', 2)
             self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✘\n".format(Storage.filename[:37]), 'warning')
+            self.txt.tag_config('warning', foreground="red")
             self.txt.yview('end')
             self.txt.configure(state='disabled')
         self.txt.yview('end')
@@ -305,6 +305,7 @@ class App:
         self.txt.configure(state='normal')
         self.refresh()
         self.txt.insert('end', "Problem with {}\n".format(str(weld_number)), 'warning')
+        self.txt.tag_config('warning', foreground="red")
         self.txt.yview('end')
         self.txt.configure(state='disabled')
 
