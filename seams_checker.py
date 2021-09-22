@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.filedialog as dg
 import tkinter.scrolledtext as st
 import os
+import sys
 import re
 import random
 import base64
