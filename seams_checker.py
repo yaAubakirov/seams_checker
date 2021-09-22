@@ -68,9 +68,7 @@ class Analyze:
     def is_weld_is_plating_grating(cls, weld, index, text):
         if Analyze.weld_without_ndt(weld, text):
             if Storage.first_mark_list[index][:3] == "FLP" \
-                    or Storage.second_mark_list[index][:3] == "FLP" \
-                    or Storage.first_mark_list[index][:2] == "GR" \
-                    or Storage.second_mark_list[index][:2] == "GR":
+                    or Storage.second_mark_list[index][:3] == "FLP":
                 return True
         else:
             return False
