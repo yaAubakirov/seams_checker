@@ -77,7 +77,7 @@ class Analyze:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.20
+        version = 1.21
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -114,6 +114,11 @@ class App:
         if file is not None:
             filepath = os.path.abspath(file.name)
             filename = os.path.splitext(os.path.basename(filepath))[0]
+            # to check if filename in appropriate format
+            if "079322C-AWP1B-" not in filename[:14]:
+                self.insert_text("PDF file should be in appropriate format")
+                self.insert_text("079322C-AWP1B-XXX-CS-KMD-XXXXX-XX-XXX")
+                return False
             pdf_load = threading.Thread(target=Analyze.extract_text_from_pdf2, args=[filepath])
             pdf_load.daemon = True
             pdf_load.start()
