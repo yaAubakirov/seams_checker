@@ -45,7 +45,7 @@ class Analyze:
         for ndt in ndt_classes:
             for page in text:
                 try:
-                    res_search = re.search(to_find + ndt, text[page])
+                    res_search = re.search("".join([to_find, ndt]), text[page])
                 except:
                     return False
 
