@@ -5,7 +5,6 @@ import os
 import sys
 import re
 import random
-import base64
 import threading
 import openpyxl
 import fitz
@@ -30,7 +29,7 @@ class Analyze:
         with fitz.open(pdf_path) as doc:
             text = {}
             for num, page in enumerate(doc):
-                text[num] = page.get_text()
+                text[num] = page.get_text(clip=page.rect)
 
             Storage.text = text
 
@@ -73,11 +72,21 @@ class Analyze:
         else:
             return False
 
+    @classmethod
+    def is_weld_platform_plating(cls, weld, index, text):
+        if Analyze.weld_without_ndt(weld, text):
+            if Storage.first_mark_list[index][:2] == "PL" and Storage.first_mark_list[index][7:9] == "PL":
+                return True
+            elif Storage.second_mark_list[index][:2] == "PL" and Storage.second_mark_list[index][7:9] == "PL":
+                return True
+            else:
+                return False
+
 
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.21
+        version = 1.22
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -245,6 +254,9 @@ class App:
                         wrong_welds.append(weld)
                         self.txt.yview('end')
                 elif Analyze.is_weld_is_plating_grating(str(weld), index, text):
+                    self.typical_weld_text_insert(weld)
+                    typical_welds.append(weld)
+                elif Analyze.is_weld_platform_plating(str(weld), index, text):
                     self.typical_weld_text_insert(weld)
                     typical_welds.append(weld)
                 else:
