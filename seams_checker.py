@@ -19,6 +19,18 @@ class Storage:
     second_mark_list = None
     temp_drawing_number_list = None
     filename = None
+    duplicated_welds = None
+
+    @classmethod
+    def clear_all(cls):
+        Storage.text = None
+        Storage.weld_list = None
+        Storage.ndt_list = None
+        Storage.first_mark_list = None
+        Storage.second_mark_list = None
+        Storage.temp_drawing_number_list = None
+        Storage.filename = None
+        Storage.duplicated_welds = None
 
 
 # class which one works with text
@@ -82,11 +94,17 @@ class Analyze:
             else:
                 return False
 
+    @classmethod
+    def checking_welds_for_duplicates(cls, welds_list):
+        seen = set()
+        unique = [x for x in welds_list if x in seen or seen.add(x)]
+        return unique
+
 
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.22
+        version = 1.3
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -119,6 +137,8 @@ class App:
         self.copyright.place(relx=.6, rely=.95)
 
     def pdf_load(self):
+        self.clear_all_text()
+        Storage.clear_all()
         file = dg.askopenfile(mode='rb', title='Choose a file', filetypes=[("PDF files", ".pdf")])
         if file is not None:
             filepath = os.path.abspath(file.name)
@@ -230,12 +250,22 @@ class App:
             self.insert_text('WSL is not uploaded')
             return False
         self.insert_text('WSL is uploaded')
+        list_of_duplicates = Analyze.checking_welds_for_duplicates(temp_welds_list)
+        if len(list_of_duplicates) > 0:
+            self.insert_text('\n.............')
+            for weld in list_of_duplicates:
+                self.insert_text('Weld {} is duplicated'.format(weld))
+            self.insert_text('.............\n')
+            Storage.duplicated_welds = list_of_duplicates
 
     def analyze(self):
         wrong_welds = []
         typical_welds = []
         self.insert_text('.............')
         text = ""
+        duplicated_welds = []
+        if Storage.duplicated_welds:
+            duplicated_welds = Storage.duplicated_welds
         if Storage.text is None:
             self.insert_text('PDF is not loaded')
         else:
@@ -271,10 +301,13 @@ class App:
         if len(typical_welds) > 0:
             final_result_for_typical_welds = "Total count of typical welds is {}".format(len(typical_welds))
             self.insert_text(final_result_for_typical_welds)
+        if len(duplicated_welds) > 0:
+            final_result_for_duplicated_welds = "Total count of duplicated welds is {}".format(len(duplicated_welds))
+            self.insert_text(final_result_for_duplicated_welds)
         final_result_for_wrong_welds = "Total count of problem welds is {}".format(len(wrong_welds))
         self.insert_text(final_result_for_wrong_welds, 2)
 
-        if len(wrong_welds) == 0:
+        if len(wrong_welds) == 0 and len(duplicated_welds) == 0:
             self.insert_text('.............', 2)
             self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'name')
