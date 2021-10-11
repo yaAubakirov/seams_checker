@@ -20,6 +20,7 @@ class Storage:
     temp_drawing_number_list = None
     filename = None
     duplicated_welds = None
+    list_of_found_welds = None
 
     @classmethod
     def clear_all(cls):
@@ -31,6 +32,7 @@ class Storage:
         Storage.temp_drawing_number_list = None
         Storage.filename = None
         Storage.duplicated_welds = None
+        Storage.list_of_found_welds = None
 
 
 # class which one works with text
@@ -45,6 +47,35 @@ class Analyze:
 
             Storage.text = text
 
+    @classmethod
+    def extract_text_from_pdf(cls, pdf_path):
+        all_text = ""
+        with fitz.open(pdf_path) as doc:
+            for num, page in enumerate(doc):
+                all_text += page.get_text(clip=page.rect)
+
+        list_of_welds = Analyze.find_all_welds(all_text)
+        Storage.list_of_found_welds = list_of_welds
+        Storage.text = all_text
+
+    @classmethod
+    def find_all_welds(cls, text):
+        list_of_exceptions = [
+            '01C', '02C', '03C', '04C', '05C', '06C', '07C', '08C', '09C'
+                              ]
+        pattern = r"[w]?[\d+]+[  ]?[A-D][\n]"
+        welds = re.findall(pattern, text)
+        welds = list(set(welds))
+        for i, weld in enumerate(welds):
+            welds[i] = weld.replace("\n", "").replace(" ", "").replace(" ]", "")
+
+        for exception in list_of_exceptions:
+            try:
+                welds.remove(exception)
+            except:
+                continue
+        return welds
+
     # this class gets weld number, its index and text. Looks for concatenated weld number with ndt class in text
     @classmethod
     def find_in_text(cls, to_find, index, text):
@@ -55,25 +86,22 @@ class Analyze:
             ' ' + str(Storage.ndt_list[index])
         ]
         for ndt in ndt_classes:
-            for page in text:
-                try:
-                    res_search = re.search("".join([to_find, ndt]), text[page])
-                except:
-                    return False
-
-                if res_search:
-                    return True
+            try:
+                res_search = re.search("".join([to_find, ndt]), text)
+            except:
+                return False
+            if res_search:
+                return True
 
     @classmethod
     def weld_without_ndt(cls, weld, text):
-        for page in text:
-            try:
-                res_search = re.search(weld, text[page])
-            except:
-                return False
+        try:
+            res_search = re.search(weld, text)
+        except:
+            return False
 
-            if res_search:
-                return True
+        if res_search:
+            return True
 
     @classmethod
     def is_weld_is_plating_grating(cls, weld, index, text):
@@ -104,7 +132,7 @@ class Analyze:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.3
+        version = 1.4
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -148,7 +176,7 @@ class App:
                 self.insert_text("PDF file should be in appropriate format")
                 self.insert_text("079322C-AWP1B-XXX-CS-KMD-XXXXX-XX-XXX")
                 return False
-            pdf_load = threading.Thread(target=Analyze.extract_text_from_pdf2, args=[filepath])
+            pdf_load = threading.Thread(target=Analyze.extract_text_from_pdf, args=[filepath])
             pdf_load.daemon = True
             pdf_load.start()
             while pdf_load.is_alive():
@@ -250,11 +278,12 @@ class App:
             self.insert_text('WSL is not uploaded')
             return False
         self.insert_text('WSL is uploaded')
-        list_of_duplicates = Analyze.checking_welds_for_duplicates(temp_welds_list)
+        list_of_duplicates = list(set(Analyze.checking_welds_for_duplicates(temp_welds_list)))
         if len(list_of_duplicates) > 0:
             self.insert_text('\n.............')
             for weld in list_of_duplicates:
-                self.insert_text('Weld {} is duplicated'.format(weld))
+                if weld != "missed weld number":
+                    self.insert_text('Weld {} is duplicated'.format(weld))
             self.insert_text('.............\n')
             Storage.duplicated_welds = list_of_duplicates
 
@@ -307,23 +336,57 @@ class App:
         final_result_for_wrong_welds = "Total count of problem welds is {}".format(len(wrong_welds))
         self.insert_text(final_result_for_wrong_welds, 2)
 
-        if len(wrong_welds) == 0 and len(duplicated_welds) == 0:
+        list_of_welds = Storage.weld_list
+        found_welds = Storage.list_of_found_welds
+        if len(found_welds) > 0 and found_welds[0][0] == "w":
+            found_welds = [weld.replace("w", "") for weld in found_welds]
+        found_welds = [weld.replace(" ", "").replace(" ", "") for weld in found_welds]
+        found_welds = [int(weld[:len(weld) - 1]) for weld in found_welds]
+        spare_welds = list(set(found_welds).difference(set(list_of_welds)))
+
+        if len(wrong_welds) == 0 and len(duplicated_welds) == 0 and len(spare_welds) == 0:
             self.insert_text('.............', 2)
             self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'name')
             self.txt.tag_config('name', foreground='green')
             self.txt.yview('end')
             self.txt.configure(state='disabled')
-        if len(Storage.weld_list) == len(wrong_welds):
-            self.insert_text('Probably spaces are not deleted from WSL')
-        if len(wrong_welds) > 0:
+        elif len(wrong_welds) > 0:
             self.insert_text('.............', 2)
             self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✘\n".format(Storage.filename[:37]), 'warning')
             self.txt.tag_config('warning', foreground="red")
             self.txt.yview('end')
             self.txt.configure(state='disabled')
+        elif len(spare_welds) > 0 and len(wrong_welds) == 0:
+            self.insert_text('.............', 2)
+            self.txt.configure(state='normal')
+            self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'org')
+            self.txt.tag_config('org', foreground='orange')
+            self.txt.yview('end')
+            self.txt.configure(state='disabled')
+        if len(Storage.weld_list) == len(wrong_welds):
+            self.insert_text('\n.............')
+            self.insert_text('Probably spaces are not deleted from WSL')
+            self.insert_text('Or you have chosen wrong WSL')
+            return 0
         self.txt.yview('end')
+
+        if len(wrong_welds) > 0:
+            self.insert_text('\n.............')
+            self.insert_text('Problem welds:')
+            for weld in wrong_welds:
+                if weld != "missed weld number":
+                    self.insert_text(weld)
+            if "missed weld number" in wrong_welds:
+                self.insert_text('.............')
+                self.insert_text("Check WSL. Some weld numbers are missed")
+
+        if len(spare_welds) > 0:
+            self.insert_text('\n.............')
+            self.insert_text('These welds are not presented in WSL:')
+            for weld in spare_welds:
+                self.insert_text(weld)
 
     def loading(self):
         hashtags = random.randint(5, 35)
@@ -360,8 +423,8 @@ class App:
     def typical_weld_text_insert(self, weld_number):
         self.txt.configure(state='normal')
         self.refresh()
-        self.txt.insert('end', "{} is typical\n".format(str(weld_number)), 'attention')
-        self.txt.tag_config('attention', foreground='#FFC000')
+        self.txt.insert('end', "{} is typical\n".format(str(weld_number)), 'typical')
+        self.txt.tag_config('typical', foreground='orange')
         self.txt.yview('end')
         self.txt.configure(state='disabled')
 
