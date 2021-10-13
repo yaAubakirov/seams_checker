@@ -74,6 +74,7 @@ class Analyze:
                 welds.remove(exception)
             except:
                 continue
+        welds.sort()
         return welds
 
     # this class gets weld number, its index and text. Looks for concatenated weld number with ndt class in text
@@ -99,7 +100,6 @@ class Analyze:
             res_search = re.search(weld, text)
         except:
             return False
-
         if res_search:
             return True
 
@@ -125,14 +125,33 @@ class Analyze:
     @classmethod
     def checking_welds_for_duplicates(cls, welds_list):
         seen = set()
-        unique = [x for x in welds_list if x in seen or seen.add(x)]
+        unique = [x for x in welds_list if x in seen and isinstance(x, int) or seen.add(x)]
         return unique
+
+
+class Excel:
+    @classmethod
+    def extract_from_sheet(cls, ws, max_rows, column, row=2):
+        temp_list = []
+        row_index = row
+        for row in ws.iter_rows(min_row=row, min_col=column, max_col=column, max_row=max_rows):
+            for cell in row:
+                if cell.value:
+                    if isinstance(cell.value, int):
+                        temp_list.append(cell.value)
+                    else:
+                        stripped_value = cell.value.strip()
+                        temp_list.append(stripped_value)
+                else:
+                    temp_list.append("missed value in {} row".format(row_index))
+            row_index += 1
+        return temp_list
 
 
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.4
+        version = 1.45
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -198,94 +217,17 @@ class App:
             wb = openpyxl.load_workbook(filepath)
             ws = wb.active
             max_rows = ws.max_row
-            temp_welds_list = []
-            temp_ndt_list = []
-            temp_drawing_number_list = []
-            first_mark_list = []
-            second_mark_list = []
-            for row in ws.iter_rows(min_row=2, min_col=12, max_col=12, max_row=max_rows):
-                for cell in row:
-                    if cell.value:
-                        if str(cell.value)[0] != ' ':
-                            temp_welds_list.append(cell.value)
-                        else:
-                            self.insert_text('Spaces should be deleted from WSL report')
-                            return False
-                    else:
-                        temp_welds_list.append('missed weld number')
-
-            for row in ws.iter_rows(min_row=2, min_col=20, max_col=20, max_row=max_rows):
-                for cell in row:
-                    if cell.value:
-                        if str(cell.value)[0] != ' ':
-                            temp_ndt_list.append(cell.value)
-                        else:
-                            self.insert_text('Spaces should be deleted from WSL report')
-                            return False
-                    else:
-                        temp_ndt_list.append('NDT class is missed')
-
-            for row in ws.iter_rows(min_row=2, min_col=4, max_col=4, max_row=max_rows):
-                for cell in row:
-                    if cell.value is not None:
-                        if str(cell.value)[0] != ' ':
-                            temp_drawing_number_list.append(cell.value)
-                        else:
-                            self.insert_text('Spaces should be deleted from WSL report')
-                            return False
-                    else:
-                        temp_drawing_number_list.append('Drawing number is missed')
-
-            for row in ws.iter_rows(min_row=2, min_col=6, max_col=6, max_row=max_rows):
-                for cell in row:
-                    if cell.value is not None:
-                        if str(cell.value)[0] != ' ':
-                            first_mark_list.append(cell.value)
-                        else:
-                            self.insert_text('Spaces should be deleted from WSL report')
-                            return False
-                    else:
-                        temp_drawing_number_list.append('Drawing number is missed')
-
-            for row in ws.iter_rows(min_row=2, min_col=9, max_col=9, max_row=max_rows):
-                for cell in row:
-                    if cell.value is not None:
-                        if str(cell.value)[0] != ' ':
-                            second_mark_list.append(cell.value)
-                        else:
-                            self.insert_text('Spaces should be deleted from WSL report')
-                            return False
-                    else:
-                        temp_drawing_number_list.append('Drawing number is missed')
-
-            # checking for cases when drawing numbers are not filled in the end
-            if len(temp_welds_list) > len(temp_drawing_number_list):
-                a = len(temp_welds_list) - len(temp_drawing_number_list)
-                for i in range(a):
-                    temp_drawing_number_list.append('Bom-bom-bom')
-
-            if len(temp_welds_list) > len(temp_ndt_list):
-                a = len(temp_welds_list) - len(temp_ndt_list)
-                for i in range(a):
-                    temp_ndt_list.append('XXX')
-            # put lists to storage
-            Storage.weld_list = temp_welds_list
-            Storage.ndt_list = temp_ndt_list
-            Storage.temp_drawing_number_list = temp_drawing_number_list
-            Storage.first_mark_list = first_mark_list
-            Storage.second_mark_list = second_mark_list
+            Storage.weld_list = Excel.extract_from_sheet(ws, max_rows, 12)
+            Storage.ndt_list = Excel.extract_from_sheet(ws, max_rows, 20)
+            Storage.temp_drawing_number_list = Excel.extract_from_sheet(ws, max_rows, 4)
+            Storage.first_mark_list = Excel.extract_from_sheet(ws, max_rows, 6)
+            Storage.second_mark_list = Excel.extract_from_sheet(ws, max_rows, 9)
         else:
             self.insert_text('WSL is not uploaded')
             return False
         self.insert_text('WSL is uploaded')
-        list_of_duplicates = list(set(Analyze.checking_welds_for_duplicates(temp_welds_list)))
-        if len(list_of_duplicates) > 0:
-            self.insert_text('\n.............')
-            for weld in list_of_duplicates:
-                if weld != "missed weld number":
-                    self.insert_text('Weld {} is duplicated'.format(weld))
-            self.insert_text('.............\n')
-            Storage.duplicated_welds = list_of_duplicates
+        list_of_duplicates = list(set(Analyze.checking_welds_for_duplicates(Storage.weld_list)))
+        Storage.duplicated_welds = list_of_duplicates
 
     def analyze(self):
         wrong_welds = []
@@ -376,11 +318,13 @@ class App:
             self.insert_text('\n.............')
             self.insert_text('Problem welds:')
             for weld in wrong_welds:
-                if weld != "missed weld number":
-                    self.insert_text(weld)
-            if "missed weld number" in wrong_welds:
-                self.insert_text('.............')
-                self.insert_text("Check WSL. Some weld numbers are missed")
+                self.insert_text(weld)
+
+        if len(Storage.duplicated_welds) > 0:
+            self.insert_text('\n.............')
+            self.insert_text('Duplicated welds:')
+            for weld in Storage.duplicated_welds:
+                self.insert_text(weld)
 
         if len(spare_welds) > 0:
             self.insert_text('\n.............')
