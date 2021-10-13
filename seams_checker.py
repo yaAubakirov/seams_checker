@@ -293,6 +293,13 @@ class App:
             self.txt.tag_config('name', foreground='green')
             self.txt.yview('end')
             self.txt.configure(state='disabled')
+        elif len(duplicated_welds) > 0:
+            self.insert_text('.............', 2)
+            self.txt.configure(state='normal')
+            self.txt.insert('end', "{} ✘\n".format(Storage.filename[:37]), 'warning')
+            self.txt.tag_config('warning', foreground="red")
+            self.txt.yview('end')
+            self.txt.configure(state='disabled')
         elif len(wrong_welds) > 0:
             self.insert_text('.............', 2)
             self.txt.configure(state='normal')
@@ -301,6 +308,13 @@ class App:
             self.txt.yview('end')
             self.txt.configure(state='disabled')
         elif len(spare_welds) > 0 and len(wrong_welds) == 0:
+            self.insert_text('.............', 2)
+            self.txt.configure(state='normal')
+            self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'org')
+            self.txt.tag_config('org', foreground='orange')
+            self.txt.yview('end')
+            self.txt.configure(state='disabled')
+        else:
             self.insert_text('.............', 2)
             self.txt.configure(state='normal')
             self.txt.insert('end', "{} ✔\n".format(Storage.filename[:37]), 'org')
