@@ -37,16 +37,7 @@ class Storage:
 
 # class which one works with text
 class Analyze:
-    # this method extracts text from pdf and push it to dictionary
-    @classmethod
-    def extract_text_from_pdf2(cls, pdf_path):
-        with fitz.open(pdf_path) as doc:
-            text = {}
-            for num, page in enumerate(doc):
-                text[num] = page.get_text(clip=page.rect)
-
-            Storage.text = text
-
+    # this method extracts text from pdf
     @classmethod
     def extract_text_from_pdf(cls, pdf_path):
         all_text = ""
@@ -58,6 +49,7 @@ class Analyze:
         Storage.list_of_found_welds = list_of_welds
         Storage.text = all_text
 
+    # finds all weld kind entities and pushes to list
     @classmethod
     def find_all_welds(cls, text):
         list_of_exceptions = [
@@ -95,7 +87,7 @@ class Analyze:
                 return True
 
     @classmethod
-    def weld_without_ndt(cls, weld, text):
+    def __weld_without_ndt(cls, weld, text):
         try:
             res_search = re.search(weld, text)
         except:
@@ -105,7 +97,7 @@ class Analyze:
 
     @classmethod
     def is_weld_is_plating_grating(cls, weld, index, text):
-        if Analyze.weld_without_ndt(weld, text):
+        if Analyze.__weld_without_ndt(weld, text):
             if Storage.first_mark_list[index][:3] == "FLP" \
                     or Storage.second_mark_list[index][:3] == "FLP":
                 return True
@@ -114,19 +106,13 @@ class Analyze:
 
     @classmethod
     def is_weld_platform_plating(cls, weld, index, text):
-        if Analyze.weld_without_ndt(weld, text):
+        if Analyze.__weld_without_ndt(weld, text):
             if Storage.first_mark_list[index][:2] == "PL" and Storage.first_mark_list[index][7:9] == "PL":
                 return True
             elif Storage.second_mark_list[index][:2] == "PL" and Storage.second_mark_list[index][7:9] == "PL":
                 return True
             else:
                 return False
-
-    @classmethod
-    def checking_welds_for_duplicates(cls, welds_list):
-        seen = set()
-        unique = [x for x in welds_list if x in seen and isinstance(x, int) or seen.add(x)]
-        return unique
 
 
 class Excel:
@@ -143,15 +129,21 @@ class Excel:
                         stripped_value = cell.value.strip()
                         temp_list.append(stripped_value)
                 else:
-                    temp_list.append("missed value in {} row".format(row_index))
+                    temp_list.append("missed value in row {}".format(row_index))
             row_index += 1
         return temp_list
+
+    @classmethod
+    def checking_welds_for_duplicates(cls, welds_list):
+        seen = set()
+        unique = [x for x in welds_list if x in seen and isinstance(x, int) or seen.add(x)]
+        return unique
 
 
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.45
+        version = 1.46
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -226,7 +218,7 @@ class App:
             self.insert_text('WSL is not uploaded')
             return False
         self.insert_text('WSL is uploaded')
-        list_of_duplicates = list(set(Analyze.checking_welds_for_duplicates(Storage.weld_list)))
+        list_of_duplicates = list(set(Excel.checking_welds_for_duplicates(Storage.weld_list)))
         Storage.duplicated_welds = list_of_duplicates
 
     def analyze(self):
@@ -248,12 +240,9 @@ class App:
                     if Storage.temp_drawing_number_list[index] == Storage.filename[:37]:
                         self.weld_text_insert(weld)
                     else:
-                        self.refresh()
-                        self.txt.insert('end',
-                                        "Erection drawing number for {} in WSL is not correct\n".format(str(weld)),
-                                        'warning')
                         wrong_welds.append(weld)
-                        self.txt.yview('end')
+                        description = "drawing number for {}".format(weld)
+                        self.problem_weld_text_insert(description)
                 elif Analyze.is_weld_is_plating_grating(str(weld), index, text):
                     self.typical_weld_text_insert(weld)
                     typical_welds.append(weld)
