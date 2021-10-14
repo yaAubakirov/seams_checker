@@ -35,7 +35,7 @@ class Storage:
         Storage.list_of_found_welds = None
 
 
-# class which one works with text
+# class which works with pdf
 class Pdf:
     # this method extracts text from pdf
     @classmethod
@@ -70,7 +70,7 @@ class Pdf:
         return welds
 
 
-# class which one works with text
+# class which analyzes the text
 class Analyze:
     # this class gets weld number, its index and text. Looks for concatenated weld number with ndt class in text
     @classmethod
