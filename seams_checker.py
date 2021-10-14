@@ -36,7 +36,7 @@ class Storage:
 
 
 # class which one works with text
-class Analyze:
+class Pdf:
     # this method extracts text from pdf
     @classmethod
     def extract_text_from_pdf(cls, pdf_path):
@@ -45,13 +45,13 @@ class Analyze:
             for num, page in enumerate(doc):
                 all_text += page.get_text(clip=page.rect)
 
-        list_of_welds = Analyze.find_all_welds(all_text)
+        list_of_welds = Pdf.__find_all_welds(all_text)
         Storage.list_of_found_welds = list_of_welds
         Storage.text = all_text
 
     # finds all weld kind entities and pushes to list
     @classmethod
-    def find_all_welds(cls, text):
+    def __find_all_welds(cls, text):
         list_of_exceptions = [
             '01C', '02C', '03C', '04C', '05C', '06C', '07C', '08C', '09C'
                               ]
@@ -69,6 +69,9 @@ class Analyze:
         welds.sort()
         return welds
 
+
+# class which one works with text
+class Analyze:
     # this class gets weld number, its index and text. Looks for concatenated weld number with ndt class in text
     @classmethod
     def find_in_text(cls, to_find, index, text):
@@ -143,7 +146,7 @@ class Excel:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.46
+        version = 1.47
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -187,7 +190,7 @@ class App:
                 self.insert_text("PDF file should be in appropriate format")
                 self.insert_text("079322C-AWP1B-XXX-CS-KMD-XXXXX-XX-XXX")
                 return False
-            pdf_load = threading.Thread(target=Analyze.extract_text_from_pdf, args=[filepath])
+            pdf_load = threading.Thread(target=Pdf.extract_text_from_pdf, args=[filepath])
             pdf_load.daemon = True
             pdf_load.start()
             while pdf_load.is_alive():
