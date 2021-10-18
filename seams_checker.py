@@ -52,20 +52,11 @@ class Pdf:
     # finds all weld kind entities and pushes to list
     @classmethod
     def __find_all_welds(cls, text):
-        list_of_exceptions = [
-            '01C', '02C', '03C', '04C', '05C', '06C', '07C', '08C', '09C'
-                              ]
-        pattern = r"[w]?[\d+]+[  ]?[A-D][\n]"
+        pattern = r"[w]?[1-9][\d+]+[  ]?[A-D][\n]"
         welds = re.findall(pattern, text)
         welds = list(set(welds))
         for i, weld in enumerate(welds):
             welds[i] = weld.replace("\n", "").replace(" ", "").replace(" ]", "")
-
-        for exception in list_of_exceptions:
-            try:
-                welds.remove(exception)
-            except:
-                continue
         welds.sort()
         return welds
 
