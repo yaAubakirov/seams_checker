@@ -138,7 +138,7 @@ class Excel:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.47
+        version = 1.51
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
