@@ -52,12 +52,13 @@ class Pdf:
     # finds all weld kind entities and pushes to list
     @classmethod
     def __find_all_welds(cls, text):
-        pattern = r"[w]?[1-9][\d+]+[  ]?[A-D][\n]"
+        pattern = r"[-w]?[1-9][\d]+[  ]?[A-D][\n]+"
         welds = re.findall(pattern, text)
         welds = list(set(welds))
         for i, weld in enumerate(welds):
-            welds[i] = weld.replace("\n", "").replace(" ", "").replace(" ]", "")
+            welds[i] = weld.replace("\n", "").replace(" ", "").replace(" ]", "").replace("\xa0", "")
         welds.sort()
+        welds = [x for x in welds if x[0] != "-"]
         return welds
 
 
@@ -263,7 +264,7 @@ class App:
 
         list_of_welds = Storage.weld_list
         found_welds = Storage.list_of_found_welds
-        if len(found_welds) > 0 and found_welds[0][0] == "w":
+        if len(found_welds) > 0 and (found_welds[0][0] == "w" or found_welds[len(found_welds) - 1][0] == "w"):
             found_welds = [weld.replace("w", "") for weld in found_welds]
         found_welds = [weld.replace(" ", "").replace(" ", "") for weld in found_welds]
         found_welds = [int(weld[:len(weld) - 1]) for weld in found_welds]
