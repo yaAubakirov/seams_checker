@@ -138,7 +138,7 @@ class Excel:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.51
+        version = 1.52
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -178,9 +178,9 @@ class App:
             filepath = os.path.abspath(file.name)
             filename = os.path.splitext(os.path.basename(filepath))[0]
             # to check if filename in appropriate format
-            if "079322C-AWP1B-" not in filename[:14]:
+            if "079322C-AWP1B-" not in filename[:14] and "079322C-GWP5B-" not in filename[:14]:
                 self.insert_text("PDF file should be in appropriate format")
-                self.insert_text("079322C-AWP1B-XXX-CS-KMD-XXXXX-XX-XXX")
+                self.insert_text("079322C-XXXXX-XXX-CS-KMD-XXXXX-XX-XXX")
                 return False
             pdf_load = threading.Thread(target=Pdf.extract_text_from_pdf, args=[filepath])
             pdf_load.daemon = True
