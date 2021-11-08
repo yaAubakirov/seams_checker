@@ -62,7 +62,6 @@ class Pdf:
             welds[i] = weld.replace("\n", "").replace(" ", "").replace(" ]", "").replace("\xa0", "")
         welds.sort()
         welds = [x for x in welds if x[0] != "-"]
-        print(welds)
         return welds
 
 
