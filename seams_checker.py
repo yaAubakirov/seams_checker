@@ -52,13 +52,17 @@ class Pdf:
     # finds all weld kind entities and pushes to list
     @classmethod
     def __find_all_welds(cls, text):
-        pattern = r"[-w]?[1-9][\d]+[  ]?[A-D][\n]+"
+        # all welds to be extracted from plain text according to pattern below
+        # there are many types of weld representation in drawing
+        # w111A, 11111A, 11111 A etc.
+        pattern = r"\b[-w]?[^0T_-][\d]+[  ]?[A-D][\n]+\b"
         welds = re.findall(pattern, text)
         welds = list(set(welds))
         for i, weld in enumerate(welds):
             welds[i] = weld.replace("\n", "").replace(" ", "").replace(" ]", "").replace("\xa0", "")
         welds.sort()
         welds = [x for x in welds if x[0] != "-"]
+        print(welds)
         return welds
 
 
@@ -138,7 +142,7 @@ class Excel:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.52
+        version = 1.53
 
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -266,7 +270,6 @@ class App:
         found_welds = Storage.list_of_found_welds
         if len(found_welds) > 0 and (found_welds[0][0] == "w" or found_welds[len(found_welds) - 1][0] == "w"):
             found_welds = [weld.replace("w", "") for weld in found_welds]
-        found_welds = [weld.replace(" ", "").replace(" ", "") for weld in found_welds]
         found_welds = [int(weld[:len(weld) - 1]) for weld in found_welds]
         spare_welds = list(set(found_welds).difference(set(list_of_welds)))
 
