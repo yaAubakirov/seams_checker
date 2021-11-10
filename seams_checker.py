@@ -43,7 +43,7 @@ class Pdf:
         all_text = ""
         with fitz.open(pdf_path) as doc:
             for num, page in enumerate(doc):
-                all_text += page.get_text(clip=page.rect)
+                all_text += page.get_text(clip=page.rect, sort=True)
 
         list_of_welds = Pdf.__find_all_welds(all_text)
         Storage.list_of_found_welds = list_of_welds
@@ -55,6 +55,9 @@ class Pdf:
         # all welds to be extracted from plain text according to pattern below
         # there are many types of weld representation in drawing
         # w111A, 11111A, 11111 A etc.
+        # to evade extraction special beam profiles as 128A or 136A
+        # it is used dash along with w in the beginning of the pattern
+        # and after such entities are deleted by list comprehension with condition
         pattern = r"\b[-w]?[^0T_-][\d]+[  ]?[A-D][\n]+\b"
         welds = re.findall(pattern, text)
         welds = list(set(welds))
@@ -86,6 +89,7 @@ class Analyze:
 
     @classmethod
     def __weld_without_ndt(cls, weld, text):
+        # if there are typical welds, this method is used to find just weld number
         try:
             res_search = re.search(weld, text)
         except:
@@ -95,6 +99,7 @@ class Analyze:
 
     @classmethod
     def is_weld_is_plating_grating(cls, weld, index, text):
+        # method to understand if it is plating
         if Analyze.__weld_without_ndt(weld, text):
             if Storage.first_mark_list[index][:3] == "FLP" \
                     or Storage.second_mark_list[index][:3] == "FLP":
@@ -104,6 +109,7 @@ class Analyze:
 
     @classmethod
     def is_weld_platform_plating(cls, weld, index, text):
+        # method to understand if it is platform
         if Analyze.__weld_without_ndt(weld, text):
             if Storage.first_mark_list[index][:2] == "PL" and Storage.first_mark_list[index][7:9] == "PL":
                 return True
@@ -114,6 +120,9 @@ class Analyze:
 
 
 class Excel:
+    # this method extracts column and returns it as a list
+    # it takes worksheet (ws), last_row (max_rows), column to extract as int (column), and row to start
+    # if value is missed for cell it writes to list "missed value in row" with row number
     @classmethod
     def extract_from_sheet(cls, ws, max_rows, column, row=2):
         temp_list = []
@@ -131,6 +140,7 @@ class Excel:
             row_index += 1
         return temp_list
 
+    # this method is used to check if there are duplicated welds in WSL
     @classmethod
     def checking_welds_for_duplicates(cls, welds_list):
         seen = set()
@@ -141,8 +151,8 @@ class Excel:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.53
-
+        version = 1.54
+        # this is app icon file
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
             datafile = os.path.join(os.path.dirname(__file__), datafile)
