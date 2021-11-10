@@ -1,3 +1,7 @@
+# this code is written by @yaAubakirov
+# don't forget to install PyMuPDF, otherwise frontend error could appear
+# PyMuPDF version should be not less than v1.19.1
+
 import tkinter as tk
 import tkinter.filedialog as dg
 import tkinter.scrolledtext as st
