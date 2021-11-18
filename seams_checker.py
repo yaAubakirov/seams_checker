@@ -122,6 +122,17 @@ class Analyze:
             else:
                 return False
 
+    @classmethod
+    def is_weld_bnr_closure_plate(cls, weld, index, text):
+        # to check if this weld number is exist
+        if Analyze.__weld_without_ndt(weld, text):
+            if Storage.first_mark_list[index][:2] == "BN" \
+                    and Storage.second_mark_list[index][:2] == "BN"\
+                    and Storage.ndt_list[index] == "D":
+                return True
+            else:
+                return False
+
 
 class Excel:
     # this method extracts column and returns it as a list
@@ -155,7 +166,7 @@ class Excel:
 # main class which one runs application interface
 class App:
     def __init__(self, master):
-        version = 1.54
+        version = 1.55
         # this is app icon file
         datafile = "my.ico"
         if not hasattr(sys, "frozen"):
@@ -259,6 +270,9 @@ class App:
                     self.typical_weld_text_insert(weld)
                     typical_welds.append(weld)
                 elif Analyze.is_weld_platform_plating(str(weld), index, text):
+                    self.typical_weld_text_insert(weld)
+                    typical_welds.append(weld)
+                elif Analyze.is_weld_bnr_closure_plate(str(weld), index, text):
                     self.typical_weld_text_insert(weld)
                     typical_welds.append(weld)
                 else:
